@@ -1,0 +1,1077 @@
+openapi: 3.0.3
+info:
+  title: Carrier API Simulator
+  version: 1.0.0
+  description: |
+    Insurance Carrier API Simulator for Clarence platform.
+    
+    Supports both **personal** and **commercial** insurance quotes from 4 simulated carriers.
+    
+    Features:
+    - LLM-powered quote generation (OpenAI/Anthropic)
+    - Intelligent quote caching
+    - Realistic carrier behavior simulation
+    - 8 core API endpoints per carrier
+    
+    **Test API Key:** `test_key_dev_12345`
+  contact:
+    name: Carrier Simulator Team
+    email: api-support@carrier-simulator.dev
+
+servers:
+  - url: https://carrier-simulator.clarence.dev/api/v1
+    description: Production
+  - url: http://localhost:3001/api/v1
+    description: Development
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: Quotes
+    description: Quote request and generation
+  - name: Policies
+    description: Policy binding and management
+  - name: Renewals
+    description: Policy renewal operations
+  - name: Endorsements
+    description: Mid-term policy modifications
+  - name: Certificates
+    description: Certificate of Insurance generation
+  - name: Health
+    description: System health and status
+
+paths:
+  /carriers/{carrier_id}/quote:
+    post:
+      tags:
+        - Quotes
+      summary: Request Insurance Quote
+      description: |
+        Request insurance quote(s) from a carrier. Supports both personal and commercial insurance.
+        
+        **Carriers:**
+        - `reliable_insurance` - Reliable Insurance Co.
+        - `techshield_underwriters` - TechShield Underwriters
+        - `premier_underwriters` - Premier Underwriters
+        - `fastbind_insurance` - FastBind Insurance
+        
+        **Note:** First request generates via LLM (2-5s), subsequent identical requests return cached (< 100ms).
+      operationId: requestQuote
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CommercialQuoteRequest'
+                - $ref: '#/components/schemas/PersonalQuoteRequest'
+            examples:
+              commercial:
+                summary: Commercial Insurance (General Liability)
+                value:
+                  quote_request_id: qr_abc123
+                  insurance_type: commercial
+                  business_info:
+                    legal_name: Acme Tech Solutions LLC
+                    legal_structure: LLC
+                    industry: Technology Consulting
+                    industry_code: "541512"
+                    year_started: 2018
+                    revenue: 500000
+                    employees:
+                      full_time: 5
+                      part_time: 2
+                    address:
+                      street: 123 Main St
+                      city: San Francisco
+                      state: CA
+                      zip: "94102"
+                  coverage_requests:
+                    - coverage_type: general_liability
+                      requested_limits:
+                        per_occurrence: 1000000
+                        aggregate: 2000000
+                      requested_deductible: 500
+                      effective_date: "2025-12-01"
+              personal:
+                summary: Personal Insurance (Homeowners)
+                value:
+                  quote_request_id: qr_xyz789
+                  insurance_type: personal
+                  personal_info:
+                    first_name: John
+                    last_name: Doe
+                    date_of_birth: "1985-06-15"
+                    occupation: Software Engineer
+                    marital_status: married
+                    address:
+                      street: 456 Oak Ave
+                      city: San Francisco
+                      state: CA
+                      zip: "94105"
+                    credit_score_tier: good
+                  coverage_requests:
+                    - coverage_type: homeowners
+                      requested_limits:
+                        dwelling: 750000
+                        personal_property: 500000
+                        liability: 300000
+                      requested_deductible: 1000
+                      effective_date: "2025-12-01"
+                      property_info:
+                        dwelling_value: 750000
+                        year_built: 2015
+                        square_feet: 2000
+                        construction_type: frame
+                        roof_age: 3
+                        bedrooms: 3
+                        bathrooms: 2
+                        fire_alarm: true
+                        burglar_alarm: true
+      responses:
+        '200':
+          description: Quote generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /carriers/{carrier_id}/bind:
+    post:
+      tags:
+        - Policies
+      summary: Bind Policy
+      description: Bind (purchase) an insurance policy from an accepted quote.
+      operationId: bindPolicy
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BindRequest'
+      responses:
+        '201':
+          description: Policy bound successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BindResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '410':
+          $ref: '#/components/responses/QuoteExpired'
+
+  /carriers/{carrier_id}/policies/{policy_id}:
+    get:
+      tags:
+        - Policies
+      summary: Get Policy Details
+      description: Retrieve current policy details and status.
+      operationId: getPolicy
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+        - $ref: '#/components/parameters/PolicyId'
+      responses:
+        '200':
+          description: Policy details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /carriers/{carrier_id}/policies/{policy_id}/renew:
+    post:
+      tags:
+        - Renewals
+      summary: Request Renewal Quote
+      description: Request a renewal quote for an expiring policy.
+      operationId: renewPolicy
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+        - $ref: '#/components/parameters/PolicyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenewalRequest'
+      responses:
+        '200':
+          description: Renewal quote generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenewalResponse'
+
+  /carriers/{carrier_id}/policies/{policy_id}/endorse:
+    post:
+      tags:
+        - Endorsements
+      summary: Request Policy Endorsement
+      description: Request a mid-term policy modification (endorsement).
+      operationId: endorsePolicy
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+        - $ref: '#/components/parameters/PolicyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndorsementRequest'
+      responses:
+        '200':
+          description: Endorsement processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndorsementResponse'
+
+  /carriers/{carrier_id}/policies/{policy_id}/cancel:
+    post:
+      tags:
+        - Policies
+      summary: Cancel Policy
+      description: Request policy cancellation.
+      operationId: cancelPolicy
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+        - $ref: '#/components/parameters/PolicyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancellationRequest'
+      responses:
+        '200':
+          description: Cancellation processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancellationResponse'
+
+  /carriers/{carrier_id}/policies/{policy_id}/certificate:
+    post:
+      tags:
+        - Certificates
+      summary: Generate Certificate of Insurance
+      description: Generate a Certificate of Insurance (ACORD form).
+      operationId: generateCertificate
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+        - $ref: '#/components/parameters/PolicyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertificateRequest'
+      responses:
+        '200':
+          description: Certificate generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificateResponse'
+
+  /carriers/{carrier_id}/health:
+    get:
+      tags:
+        - Health
+      summary: Check Carrier Health
+      description: Check carrier system availability and status.
+      operationId: checkHealth
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+      responses:
+        '200':
+          description: System operational
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: System degraded or down
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        API key for authentication.
+        
+        **Test Keys:**
+        - Development: `test_key_dev_12345`
+        - Staging: `test_key_staging_67890`
+
+  parameters:
+    CarrierId:
+      name: carrier_id
+      in: path
+      required: true
+      description: Carrier identifier
+      schema:
+        type: string
+        enum:
+          - reliable_insurance
+          - techshield_underwriters
+          - premier_underwriters
+          - fastbind_insurance
+      example: reliable_insurance
+
+    PolicyId:
+      name: policy_id
+      in: path
+      required: true
+      description: Policy identifier
+      schema:
+        type: string
+      example: RIC-P-2025-001234
+
+  schemas:
+    # Request Schemas
+    CommercialQuoteRequest:
+      type: object
+      required:
+        - quote_request_id
+        - insurance_type
+        - business_info
+        - coverage_requests
+      properties:
+        quote_request_id:
+          type: string
+          description: Your internal quote request ID
+        insurance_type:
+          type: string
+          enum: [commercial]
+        business_info:
+          type: object
+          required:
+            - legal_name
+            - legal_structure
+            - industry
+            - industry_code
+            - year_started
+            - revenue
+            - employees
+            - address
+          properties:
+            legal_name:
+              type: string
+            dba_name:
+              type: string
+            legal_structure:
+              type: string
+              enum: [LLC, Corporation, Sole Proprietorship, Partnership, Non-Profit]
+            industry:
+              type: string
+            industry_code:
+              type: string
+              description: NAICS code
+            year_started:
+              type: integer
+              minimum: 1900
+            revenue:
+              type: integer
+              description: Annual revenue in USD
+            employees:
+              type: object
+              required: [full_time, part_time]
+              properties:
+                full_time:
+                  type: integer
+                part_time:
+                  type: integer
+            address:
+              $ref: '#/components/schemas/Address'
+        coverage_requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommercialCoverageRequest'
+        additional_data:
+          type: object
+          properties:
+            prior_coverage:
+              type: boolean
+            claims_history:
+              type: array
+              items:
+                type: object
+            credit_score_tier:
+              type: string
+              enum: [excellent, good, fair, poor]
+
+    PersonalQuoteRequest:
+      type: object
+      required:
+        - quote_request_id
+        - insurance_type
+        - personal_info
+        - coverage_requests
+      properties:
+        quote_request_id:
+          type: string
+        insurance_type:
+          type: string
+          enum: [personal]
+        personal_info:
+          type: object
+          required:
+            - first_name
+            - last_name
+            - date_of_birth
+            - occupation
+            - address
+          properties:
+            first_name:
+              type: string
+            last_name:
+              type: string
+            date_of_birth:
+              type: string
+              format: date
+            gender:
+              type: string
+              enum: [male, female, other]
+            marital_status:
+              type: string
+              enum: [single, married, divorced, widowed]
+            occupation:
+              type: string
+            email:
+              type: string
+              format: email
+            phone:
+              type: string
+            address:
+              $ref: '#/components/schemas/Address'
+            credit_score_tier:
+              type: string
+              enum: [excellent, good, fair, poor]
+        coverage_requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/PersonalCoverageRequest'
+
+    CommercialCoverageRequest:
+      type: object
+      required:
+        - coverage_type
+        - requested_limits
+        - requested_deductible
+        - effective_date
+      properties:
+        coverage_type:
+          type: string
+          enum:
+            - general_liability
+            - professional_liability
+            - cyber_liability
+            - workers_compensation
+            - commercial_property
+            - business_auto
+            - commercial_umbrella
+            - directors_officers
+            - employment_practices
+            - crime_liability
+            - media_liability
+            - fiduciary_liability
+            - employee_benefits
+        requested_limits:
+          type: object
+        requested_deductible:
+          type: integer
+        effective_date:
+          type: string
+          format: date
+
+    PersonalCoverageRequest:
+      type: object
+      required:
+        - coverage_type
+        - requested_limits
+        - requested_deductible
+        - effective_date
+      properties:
+        coverage_type:
+          type: string
+          enum:
+            - homeowners
+            - auto
+            - renters
+            - life
+            - personal_umbrella
+        requested_limits:
+          type: object
+        requested_deductible:
+          type: integer
+        effective_date:
+          type: string
+          format: date
+        property_info:
+          type: object
+          description: Required for homeowners/renters
+        vehicle_info:
+          type: object
+          description: Required for auto
+        life_info:
+          type: object
+          description: Required for life insurance
+
+    BindRequest:
+      type: object
+      required:
+        - quote_id
+        - effective_date
+        - payment_plan
+        - payment_info
+        - insured_info
+        - signature
+      properties:
+        quote_id:
+          type: string
+        effective_date:
+          type: string
+          format: date
+        payment_plan:
+          type: string
+          enum: [annual, monthly, quarterly]
+        payment_info:
+          type: object
+          required: [method, billing_address]
+          properties:
+            method:
+              type: string
+              enum: [credit_card, ach, check]
+            billing_address:
+              $ref: '#/components/schemas/Address'
+        insured_info:
+          type: object
+          properties:
+            primary_contact:
+              $ref: '#/components/schemas/Contact'
+            additional_insureds:
+              type: array
+              items:
+                type: object
+        signature:
+          $ref: '#/components/schemas/Signature'
+        customizations:
+          type: object
+
+    RenewalRequest:
+      type: object
+      required:
+        - renewal_type
+        - desired_effective_date
+      properties:
+        renewal_type:
+          type: string
+          enum: [standard, early_renewal]
+        business_changes:
+          type: object
+        personal_changes:
+          type: object
+        coverage_changes:
+          type: object
+        desired_effective_date:
+          type: string
+          format: date
+
+    EndorsementRequest:
+      type: object
+      required:
+        - endorsement_type
+        - effective_date
+        - details
+      properties:
+        endorsement_type:
+          type: string
+          enum:
+            - add_additional_insured
+            - change_limits
+            - change_deductible
+            - add_location
+            - remove_location
+        effective_date:
+          type: string
+          format: date
+        details:
+          type: object
+
+    CancellationRequest:
+      type: object
+      required:
+        - cancellation_type
+        - effective_date
+        - signature
+      properties:
+        cancellation_type:
+          type: string
+          enum: [insured_request, non_payment, underwriting]
+        effective_date:
+          type: string
+          format: date
+        reason:
+          type: string
+        signature:
+          $ref: '#/components/schemas/Signature'
+
+    CertificateRequest:
+      type: object
+      required:
+        - certificate_holder
+        - additional_insured
+      properties:
+        certificate_holder:
+          type: object
+          required: [name, address]
+          properties:
+            name:
+              type: string
+            address:
+              $ref: '#/components/schemas/Address'
+        additional_insured:
+          type: boolean
+        description_of_operations:
+          type: string
+        special_provisions:
+          type: array
+          items:
+            type: string
+
+    # Response Schemas
+    QuoteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        carrier_id:
+          type: string
+        carrier_name:
+          type: string
+        quote_id:
+          type: string
+        requested_quote_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        valid_until:
+          type: string
+          format: date-time
+        generated_via_llm:
+          type: boolean
+          description: True if generated by AI, false if cached
+        cached:
+          type: boolean
+          description: True if returned from cache
+        quotes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Quote'
+        package_discount:
+          type: object
+        underwriting_notes:
+          type: array
+          items:
+            type: string
+        bind_eligibility:
+          type: string
+
+    Quote:
+      type: object
+      properties:
+        quote_id:
+          type: string
+        coverage_type:
+          type: string
+        status:
+          type: string
+          enum: [quoted, declined]
+        decline_reason:
+          type: string
+        premium:
+          $ref: '#/components/schemas/Premium'
+        coverage_limits:
+          type: object
+        deductible:
+          type: integer
+        effective_date:
+          type: string
+          format: date
+        expiration_date:
+          type: string
+          format: date
+        policy_form:
+          type: string
+        highlights:
+          type: array
+          items:
+            type: string
+        exclusions:
+          type: array
+          items:
+            type: string
+        optional_coverages:
+          type: array
+          items:
+            type: object
+
+    BindResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        carrier_id:
+          type: string
+        bind_id:
+          type: string
+        policy:
+          $ref: '#/components/schemas/Policy'
+        bound_at:
+          type: string
+          format: date-time
+        confirmation_email_sent:
+          type: boolean
+
+    PolicyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        policy:
+          $ref: '#/components/schemas/Policy'
+
+    Policy:
+      type: object
+      properties:
+        policy_id:
+          type: string
+        policy_number:
+          type: string
+        status:
+          type: string
+          enum: [active, cancelled, expired, pending]
+        insurance_type:
+          type: string
+          enum: [personal, commercial]
+        coverage_type:
+          type: string
+        effective_date:
+          type: string
+          format: date-time
+        expiration_date:
+          type: string
+          format: date-time
+        days_until_expiration:
+          type: integer
+        insured_name:
+          type: string
+        coverage_details:
+          type: object
+        premium:
+          type: object
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+
+    RenewalResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        renewal_quote_id:
+          type: string
+        original_policy_id:
+          type: string
+        renewal_status:
+          type: string
+        quote:
+          $ref: '#/components/schemas/Quote'
+
+    EndorsementResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        endorsement_id:
+          type: string
+        policy_id:
+          type: string
+        status:
+          type: string
+        premium_change:
+          type: object
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+
+    CancellationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        cancellation_id:
+          type: string
+        policy_id:
+          type: string
+        status:
+          type: string
+        effective_date:
+          type: string
+          format: date-time
+        refund:
+          type: object
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+
+    CertificateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        certificate_id:
+          type: string
+        policy_id:
+          type: string
+        certificate_number:
+          type: string
+        issued_date:
+          type: string
+          format: date
+        document:
+          $ref: '#/components/schemas/Document'
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [operational, degraded, down]
+        carrier_id:
+          type: string
+        carrier_name:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        services:
+          type: object
+        average_response_time_ms:
+          type: integer
+        rate_limits:
+          type: object
+
+    # Shared Schemas
+    Address:
+      type: object
+      required: [street, city, state, zip]
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+          minLength: 2
+          maxLength: 2
+        zip:
+          type: string
+
+    Contact:
+      type: object
+      required: [first_name, last_name, email, phone]
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+
+    Signature:
+      type: object
+      required: [full_name, signed_at]
+      properties:
+        full_name:
+          type: string
+        signed_at:
+          type: string
+          format: date-time
+        ip_address:
+          type: string
+
+    Premium:
+      type: object
+      properties:
+        annual:
+          type: number
+          format: float
+        monthly:
+          type: number
+          format: float
+        quarterly:
+          type: number
+          format: float
+        payment_in_full_discount:
+          type: number
+          format: float
+
+    Document:
+      type: object
+      properties:
+        document_id:
+          type: string
+        type:
+          type: string
+          enum: [policy, declarations, certificate, endorsement, cancellation_notice]
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        format:
+          type: string
+        size_bytes:
+          type: integer
+        generated_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            field:
+              type: string
+            details:
+              type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: INVALID_REQUEST
+              message: Missing required field
+              field: business_info.industry_code
+
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: UNAUTHORIZED
+              message: Invalid API key
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: NOT_FOUND
+              message: Policy not found
+
+    QuoteExpired:
+      description: Quote has expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: QUOTE_EXPIRED
+              message: Quote has expired and is no longer bindable
+
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Request limit per minute
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests in current window
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: Unix timestamp when limit resets
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: RATE_LIMIT_EXCEEDED
+              message: Rate limit exceeded. Please try again later.
+              retry_after: 30
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: INTERNAL_ERROR
+              message: An unexpected error occurred
+
