@@ -19,6 +19,10 @@ class AddressDto {
   @IsString()
   unit?: string;
 
+  @IsOptional()
+  @IsString()
+  suite?: string;
+
   @IsString()
   city: string;
 
@@ -212,6 +216,11 @@ class VehicleInfoDto {
   @IsOptional()
   @IsNumber()
   annual_mileage?: number;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AddressDto)
+  garaging_address?: AddressDto;
 }
 
 class CyberInfoDto {
@@ -240,6 +249,32 @@ class CyberInfoDto {
   has_mfa?: boolean;
 }
 
+class DriverInfoDto {
+  @IsString()
+  first_name: string;
+
+  @IsString()
+  last_name: string;
+
+  @IsString()
+  date_of_birth: string;
+
+  @IsString()
+  license_number: string;
+
+  @IsString()
+  license_state: string;
+
+  @IsNumber()
+  years_licensed: number;
+
+  @IsNumber()
+  accidents_last_3_years: number;
+
+  @IsNumber()
+  violations_last_3_years: number;
+}
+
 class CoverageRequestDto {
   @IsString()
   coverage_type: string;
@@ -247,8 +282,13 @@ class CoverageRequestDto {
   @IsObject()
   requested_limits: Record<string, number>;
 
+  @IsOptional()
   @IsNumber()
-  requested_deductible: number;
+  requested_deductible?: number;
+
+  @IsOptional()
+  @IsObject()
+  requested_deductibles?: Record<string, number>;
 
   @IsString()
   effective_date: string;
@@ -267,6 +307,12 @@ class CoverageRequestDto {
   @ValidateNested()
   @Type(() => CyberInfoDto)
   cyber_info?: CyberInfoDto;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DriverInfoDto)
+  driver_info?: DriverInfoDto[];
 }
 
 export class QuoteRequestDto {

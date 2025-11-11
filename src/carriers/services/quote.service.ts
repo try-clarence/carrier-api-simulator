@@ -69,6 +69,11 @@ export class QuoteService {
       const expirationDate = new Date(coverageRequest.effective_date);
       expirationDate.setFullYear(expirationDate.getFullYear() + 1);
 
+      // Handle both requested_deductible (singular) and requested_deductibles (plural for auto)
+      const deductible = coverageRequest.requested_deductibles
+        ? coverageRequest.requested_deductibles
+        : coverageRequest.requested_deductible;
+
       const quote = {
         quote_id: quoteId,
         coverage_type: coverageRequest.coverage_type,
@@ -80,7 +85,7 @@ export class QuoteService {
           quarterly: quarterlyPremium,
           payment_in_full_discount: Math.round(annualPremium * 0.05),
         },
-        deductible: coverageRequest.requested_deductible,
+        deductible: deductible,
         effective_date: coverageRequest.effective_date,
         expiration_date: expirationDate.toISOString().split('T')[0],
         policy_form: this.getPolicyForm(coverageRequest.coverage_type),

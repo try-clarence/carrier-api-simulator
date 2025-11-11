@@ -5,6 +5,14 @@ class AddressDto {
   @IsString()
   street: string;
 
+  @IsOptional()
+  @IsString()
+  unit?: string;
+
+  @IsOptional()
+  @IsString()
+  suite?: string;
+
   @IsString()
   city: string;
 
