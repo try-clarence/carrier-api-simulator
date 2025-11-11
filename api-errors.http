@@ -1,0 +1,310 @@
+### ============================================
+### ERROR TESTING - Carrier API Simulator
+### ============================================
+### Test all error codes from API_SCHEMA.md
+###
+### Base URL: http://localhost:3001/api/v1
+### Test API Key: test_clarence_key_123
+### ============================================
+
+@baseUrl = http://localhost:3001/api/v1
+@apiKey = test_clarence_key_123
+
+### ============================================
+### 1. INVALID_REQUEST (400) - Wrong Enum Value
+### ============================================
+
+POST {{baseUrl}}/carriers/reliable_insurance/quote
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "quote_request_id": "error_test_001",
+  "insurance_type": "invalid_type",
+  "business_info": {
+    "legal_name": "Test Company",
+    "industry": "Technology",
+    "industry_code": "541512"
+  }
+}
+
+### ============================================
+### 2. INVALID_REQUEST (400) - Missing Required Field
+### ============================================
+
+POST {{baseUrl}}/carriers/reliable_insurance/quote
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "quote_request_id": "error_test_002"
+  // Missing insurance_type field
+}
+
+### ============================================
+### 3. INVALID_REQUEST (400) - Invalid Data Type
+### ============================================
+
+POST {{baseUrl}}/carriers/reliable_insurance/quote
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "quote_request_id": 12345,
+  "insurance_type": "commercial"
+}
+
+### ============================================
+### 4. INVALID_REQUEST (400) - Empty Coverage Requests
+### ============================================
+
+POST {{baseUrl}}/carriers/reliable_insurance/quote
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "quote_request_id": "error_test_003",
+  "insurance_type": "commercial",
+  "business_info": {
+    "legal_name": "Test Company",
+    "industry": "Technology",
+    "industry_code": "541512",
+    "financial_info": {
+      "annual_revenue": 500000,
+      "full_time_employees": 5
+    }
+  },
+  "coverage_requests": []
+}
+
+### ============================================
+### 5. UNAUTHORIZED (401) - Missing API Key
+### ============================================
+
+POST {{baseUrl}}/carriers/reliable_insurance/quote
+Content-Type: application/json
+
+{
+  "quote_request_id": "error_test_004",
+  "insurance_type": "commercial",
+  "business_info": {
+    "legal_name": "Test Company",
+    "industry": "Technology",
+    "industry_code": "541512",
+    "financial_info": {
+      "annual_revenue": 500000,
+      "full_time_employees": 5
+    }
+  },
+  "coverage_requests": [{
+    "coverage_type": "general_liability",
+    "requested_limits": { "occurrence": 1000000 },
+    "effective_date": "2025-12-01"
+  }]
+}
+
+### ============================================
+### 6. UNAUTHORIZED (401) - Invalid API Key
+### ============================================
+
+POST {{baseUrl}}/carriers/reliable_insurance/quote
+X-API-Key: wrong_api_key_123
+Content-Type: application/json
+
+{
+  "quote_request_id": "error_test_005",
+  "insurance_type": "commercial",
+  "business_info": {
+    "legal_name": "Test Company",
+    "industry": "Technology",
+    "industry_code": "541512",
+    "financial_info": {
+      "annual_revenue": 500000,
+      "full_time_employees": 5
+    }
+  },
+  "coverage_requests": [{
+    "coverage_type": "general_liability",
+    "requested_limits": { "occurrence": 1000000 },
+    "effective_date": "2025-12-01"
+  }]
+}
+
+### ============================================
+### 7. CARRIER_NOT_FOUND (404) - Invalid Carrier ID
+### ============================================
+
+POST {{baseUrl}}/carriers/nonexistent_carrier/quote
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "quote_request_id": "error_test_006",
+  "insurance_type": "commercial",
+  "business_info": {
+    "legal_name": "Test Company",
+    "industry": "Technology",
+    "industry_code": "541512",
+    "financial_info": {
+      "annual_revenue": 500000,
+      "full_time_employees": 5
+    }
+  },
+  "coverage_requests": [{
+    "coverage_type": "general_liability",
+    "requested_limits": { "occurrence": 1000000 },
+    "effective_date": "2025-12-01"
+  }]
+}
+
+### ============================================
+### 8. NOT_FOUND (404) - Invalid Quote ID
+### ============================================
+
+POST {{baseUrl}}/carriers/reliable_insurance/bind
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "quote_id": "INVALID-QUOTE-ID-999999",
+  "effective_date": "2025-12-01",
+  "payment_plan": "annual",
+  "payment_info": {
+    "method": "credit_card",
+    "token": "tok_test_123"
+  },
+  "insured_info": {
+    "primary_contact": {
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john@test.com",
+      "phone": "+15551234567"
+    }
+  },
+  "signature": {
+    "full_name": "John Doe",
+    "signed_at": "2025-11-11T10:00:00Z",
+    "ip_address": "192.168.1.1"
+  }
+}
+
+### ============================================
+### 9. POLICY_NOT_FOUND (404) - Invalid Policy ID
+### ============================================
+
+GET {{baseUrl}}/carriers/reliable_insurance/policies/INVALID-POLICY-ID-999999
+X-API-Key: {{apiKey}}
+
+### ============================================
+### 10. POLICY_NOT_FOUND (404) - Renew Non-existent Policy
+### ============================================
+
+POST {{baseUrl}}/carriers/reliable_insurance/policies/INVALID-POLICY-ID/renew
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "renewal_type": "standard",
+  "desired_effective_date": "2026-12-01"
+}
+
+### ============================================
+### 11. POLICY_NOT_FOUND (404) - Endorse Non-existent Policy
+### ============================================
+
+POST {{baseUrl}}/carriers/reliable_insurance/policies/INVALID-POLICY-ID/endorse
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "endorsement_type": "increase_limits",
+  "effective_date": "2025-12-15",
+  "details": {
+    "new_limits": {
+      "per_occurrence": 2000000
+    }
+  }
+}
+
+### ============================================
+### 12. POLICY_NOT_FOUND (404) - Cancel Non-existent Policy
+### ============================================
+
+POST {{baseUrl}}/carriers/reliable_insurance/policies/INVALID-POLICY-ID/cancel
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "cancellation_type": "insured_request",
+  "effective_date": "2025-12-01",
+  "reason": "Testing error handling",
+  "signature": {
+    "full_name": "John Doe",
+    "signed_at": "2025-11-11T10:00:00Z",
+    "ip_address": "192.168.1.1"
+  }
+}
+
+### ============================================
+### 13. POLICY_NOT_FOUND (404) - Certificate for Non-existent Policy
+### ============================================
+
+POST {{baseUrl}}/carriers/reliable_insurance/policies/INVALID-POLICY-ID/certificate
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "certificate_holder": {
+    "name": "Test Company LLC",
+    "address": {
+      "street": "123 Test St",
+      "city": "San Francisco",
+      "state": "CA",
+      "zip": "94102"
+    }
+  },
+  "additional_insured": true,
+  "description_of_operations": "Testing error handling"
+}
+
+### ============================================
+### 14. QUOTE_EXPIRED (410) - Expired Quote
+### ============================================
+### Note: To test this, you need to first create a quote,
+### then modify its expiration date or wait 30 days
+### For now, this will return NOT_FOUND since we're using a fake ID
+
+POST {{baseUrl}}/carriers/reliable_insurance/bind
+X-API-Key: {{apiKey}}
+Content-Type: application/json
+
+{
+  "quote_id": "EXPIRED-QUOTE-ID",
+  "effective_date": "2025-12-01",
+  "payment_plan": "annual",
+  "payment_info": {
+    "method": "credit_card",
+    "token": "tok_test_123"
+  },
+  "insured_info": {
+    "primary_contact": {
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john@test.com",
+      "phone": "+15551234567"
+    }
+  },
+  "signature": {
+    "full_name": "John Doe",
+    "signed_at": "2025-11-11T10:00:00Z",
+    "ip_address": "192.168.1.1"
+  }
+}
+
+### ============================================
+### INTERNAL_ERROR (500) - Would Need Code Bug
+### ============================================
+### This error only occurs when there's an unhandled exception
+### in the code. It's caught by the global exception filter.
+### To test, you'd need to intentionally create a bug.
+

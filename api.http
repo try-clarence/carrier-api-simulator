@@ -418,3 +418,15 @@ X-API-Key: {{apiKey}}
 GET {{baseUrl}}/carriers/fastbind_insurance/health
 X-API-Key: {{apiKey}}
 
+### ============================================
+### 6. CACHE MANAGEMENT (For Testing)
+### ============================================
+
+### Get Cache Statistics
+GET {{baseUrl}}/carriers/cache/stats
+X-API-Key: {{apiKey}}
+
+### Clear Cache
+POST {{baseUrl}}/carriers/cache/clear
+X-API-Key: {{apiKey}}
+

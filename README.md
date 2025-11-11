@@ -1,5 +1,10 @@
 # Insurance Carrier API Simulator (MVP)
 
+[![CI/CD Pipeline](https://github.com/YOUR_USERNAME/carrier-api-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/carrier-api-simulator/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/YOUR_USERNAME/carrier-api-simulator/actions/workflows/codeql.yml/badge.svg)](https://github.com/YOUR_USERNAME/carrier-api-simulator/actions/workflows/codeql.yml)
+[![Tests](https://img.shields.io/badge/tests-53%20passing-brightgreen)](https://github.com/YOUR_USERNAME/carrier-api-simulator/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ## Overview
 
 A **simple mock API** that simulates 4 insurance carrier APIs for Clarence backend development and testing. Returns fake but realistic insurance quotes and policy data.
