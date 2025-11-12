@@ -235,7 +235,6 @@ gh pr create --title "Test: Verify CI/CD Pipeline" \
      - ✅ E2E Tests
      - ✅ Build Check
      - ✅ CodeQL Analysis
-     - ✅ Dependency Review
 
 3. **Wait for completion:**
    - All checks should complete in ~5-7 minutes
@@ -440,4 +439,6 @@ gh pr create --title "Test CI/CD" --body "Testing pipeline"
 
 **Last Updated:** November 11, 2025  
 **Status:** Ready to Use ✅
+
+
 

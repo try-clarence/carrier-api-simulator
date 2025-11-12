@@ -70,17 +70,9 @@ This project uses GitHub Actions for continuous integration and continuous deplo
 
 ---
 
-### 3. Dependency Review (`.github/workflows/dependency-review.yml`)
+### 3. Dependency Review
 
-**Triggers:**
-- Pull requests to `main` or `develop` branches
-
-**Purpose:**
-- Reviews dependency changes in PRs
-- Identifies vulnerable dependencies
-- Checks for license compliance
-- Comments summary directly in PR
-- Fails on moderate or higher severity issues
+**Note:** The dependency-review workflow has been removed as it requires GitHub Advanced Security (GHAS) for private repositories. Security auditing is still performed via `npm audit` in the main CI/CD pipeline.
 
 ---
 
@@ -93,7 +85,6 @@ Add these to your `README.md`:
 ```markdown
 ![CI/CD Pipeline](https://github.com/YOUR_USERNAME/carrier-api-simulator/actions/workflows/ci.yml/badge.svg)
 ![CodeQL](https://github.com/YOUR_USERNAME/carrier-api-simulator/actions/workflows/codeql.yml/badge.svg)
-![Dependency Review](https://github.com/YOUR_USERNAME/carrier-api-simulator/actions/workflows/dependency-review.yml/badge.svg)
 ```
 
 ---
